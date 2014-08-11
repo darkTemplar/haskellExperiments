@@ -44,8 +44,9 @@ recMerge (z:zs) (y:ys)
 -- 6.5 merge sort
 msort :: (Ord a) => [a] -> [a]
 msort [] = []
-msort x:[] = [x]
-msort (x:xs) = 
+msort [x] = [x]
+msort xs = let (as,bs) = halves xs
+	in recMerge (msort as) (msort bs)
 
 -- helper function for merge sort to halve an array
 halves :: [a] -> ([a],[a])
