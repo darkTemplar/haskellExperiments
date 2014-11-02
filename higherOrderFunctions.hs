@@ -43,6 +43,23 @@ myDropWhile f (x:xs)
 	| f x = myDropWhile f xs
 	| otherwise = (x:xs)
 
+-- implementing sum using foldr
+mySum :: (Num a) => [a] -> a
+mySum xs = foldr (+) 0 xs
+
+-- reverse using foldr
+myReverse :: [a] -> [a]
+myReverse xs = foldr (\x acc -> acc ++ [x]) [] xs
+
+-- filter using foldr
+myFilter1 :: (a -> Bool) -> [a] -> [a]
+myFilter1 p xs = foldr (\x acc -> if p x then x:acc else acc) [] xs
+
+-- 7.4. convert decimal number to Int => [2,3,4,5] -> 2345
+dec2int :: [Int] => Int
+dec2int xs = foldl (\acc x -> 10*acc + x) 0 xs
+
+
 
 
 

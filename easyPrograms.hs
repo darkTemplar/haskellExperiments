@@ -1,4 +1,6 @@
 import Data.Char
+-- to suppress something from prelude use the following
+--import Prelude hiding ((||))
 
 -- find positive factors of a number n
 factors :: Int -> [Int] 
@@ -52,3 +54,61 @@ msort xs = let (as,bs) = halves xs
 halves :: [a] -> ([a],[a])
 halves xs = (take n xs, drop n xs)
 	where n = (length xs) `div` 2 
+
+-- quick sort 
+qsort :: (Ord a) => [a] -> [a]
+qsort [] = []
+qsort (x:xs) = qsort smaller ++ [x] ++ qsort larger
+	where 
+		smaller = [y | y <- xs, y <= x]
+		larger = [y | y <- xs, y > x]
+
+-- reverse qsort
+revQsort :: (Ord a) => [a] -> [a]
+revQsort [] = []
+revQsort (x:xs) = revQsort larger ++ [x] ++ revQsort smaller
+	where 
+		smaller = [y | y <- xs, y < x]
+		larger = [y | y <- xs, y >= x]
+
+-- qsort variants
+div' :: Int
+div' = x `div` length xs
+	where
+		x = 10
+		xs = [1..5]
+
+-- list comprehension assignments
+replicate' :: Int -> a -> [a]
+replicate' n a = [a | _ <- [1..n]]
+
+-- integers which are "perfect" i.e. sum of factors (excluding number itself) is the number. E.g. 28 = 1 + 2 + 4 + 7 + 14
+
+-- scalar product
+scalar xs ys = sum [x * y | (x,y) <- xs `zip` ys]
+
+-- reimplement factors 
+divisors :: Int -> [Int]
+divisors n = [x | x <- [1..n], n `mod` x == 0]
+
+-- find function (find all values which match the key assuming list of [(key, value)] tuples)
+find :: (Eq a) => a -> [(a,b)] -> [b]
+find x xs = [v | (k,v) <- xs, x == k]
+
+-- positions (find all indexes which match value)
+positions :: (Eq a) => a -> [a] -> [Int]
+positions x xs = [k | (v,k) <- zip xs [0..n], v == x]
+	where n = length xs - 1  
+
+-- positions using find function defined above
+positions' :: (Eq a) => a -> [a] -> [Int]
+positions' x xs = find x (zip xs [0..n])
+	where n = length xs - 1
+
+
+
+
+
+
+
+
