@@ -66,10 +66,10 @@ h g f = (f . g) $ f
 
 fix = h fix
 
-fib' :: (Num a, Eq a) => (a -> a) -> a -> a
-fib' = \fib' n -> if (n == 0) then 1 else n * fib'(n-1)
+fact' :: (Num a, Eq a) => (a -> a) -> a -> a
+fact' = \fib' n -> if (n == 0) then 1 else n * fact'(n-1)
 
-k = fix $ fib'
+k = fix $ fact'
 
 
 
