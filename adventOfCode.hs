@@ -3,6 +3,7 @@ import Test.HUnit
 import Network.HTTP
 import System.IO
 import Data.List.Split
+import Data.List (nub)
 
 doTests :: IO ()
 doTests = do
@@ -80,4 +81,32 @@ puzzle2 = do
 		print $ ribbonNeeded $ map (map stringToInt . (splitOn "x")) $ lines contents)
 
 -- ***** Day 3 *****
+tday3 :: Test
+tday3 = TestList[ t3part1 ]
+
+-- part 1: count number of houses where Santa leaves at least one present (i.e. number of houses visited by Santa)
+-- input will be in form of directions :  '^' - North, '>' - East, '<' - West and so on.
+-- we will parse these into (x,y) coordinate tuples
+housesVisited :: [(Int, Int)] -> Int
+housesVisited xs = length . nub $ scanl (\(x, y) (a,b) -> (x+a, y+b)) (0,0) xs
+t3part1 :: Test
+t3part1 = "housesVisited" ~: TestList[housesVisited [(1,0)] ~?= 2,
+									housesVisited [(0,1), (1,0), (0,-1), (-1,0)] ~?= 5]
+
+puzzle3 :: IO ()
+puzzle3 = do
+	withFile "adventOfCodeDay3.txt" ReadMode (\handle -> do
+		contents <- hGetContents handle 
+		let parseDirections dir
+			| dir == '>' = (1,0)
+			| dir == '<' = (-1,0)
+			| dir == '^' = (0,1)
+			| dir == 'v' = (0,-1)
+			| otherwise = (0,0)
+		print $ housesVisited $ foldr (\x acc -> (parseDirections x):acc) [] contents)
+
+
+
+
+
 
