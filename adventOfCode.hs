@@ -2,12 +2,16 @@ module Main where
 import Test.HUnit
 import Network.HTTP
 import System.IO
+import Data.Char
+import Data.List
 import Data.List.Split
-import Data.List (nub)
+import Crypto.Hash.MD5
+import qualified Data.ByteString.Lazy as LB
+import qualified Data.Map as M
 
 doTests :: IO ()
 doTests = do
-	_ <- runTestTT $ TestList [ tday1 ]
+	_ <- runTestTT $ TestList [ tday1, tday2, tday3, tday20 ]
 	return ()
 
 
@@ -16,9 +20,17 @@ stringToInt :: String -> Int
 stringToInt x = read x :: Int
 
 shiftByOne :: [a] -> [a]
-shiftByOne (x:xs) = xs ++ [x] 
+shiftByOne (x:xs) = xs ++ [x]
 
--- ***** Day 1 *****
+tuplify2 :: [a] -> (a, a)
+tuplify2 (a:b:[]) = (a, b) 
+
+-- split list by alternate elements i.e. [1,2,3,4] -> ([1,3], [2,4])
+splitListInTwo :: [a] -> ([a], [a])
+splitListInTwo [] = ([], [])
+splitListInTwo (x:y:zs) = ((x:xs), (y:ys)) where (xs, ys) = splitListInTwo zs  
+
+-- **** Day 1 ****
 tday1 :: Test
 tday1 = TestList[ t1part1, t1part2 ]
 
@@ -40,7 +52,7 @@ t1part2 :: Test
 t1part2 = "findBasement" ~: TestList[findBasement ")" ~?= 1,
 									findBasement "()())" ~?= 5]
 
--- **** DAY 2 *****
+-- **** DAY 2 ****
 tday2 :: Test
 tday2 = TestList[ t2part1, t2part2 ]
 
@@ -80,9 +92,9 @@ puzzle2 = do
 		--print $ giftWrapNeeded $ map (map stringToInt . (splitOn "x")) $ lines contents)
 		print $ ribbonNeeded $ map (map stringToInt . (splitOn "x")) $ lines contents)
 
--- ***** Day 3 *****
+-- **** Day 3 ****
 tday3 :: Test
-tday3 = TestList[ t3part1 ]
+tday3 = TestList[ t3part1, t3part2 ]
 
 -- part 1: count number of houses where Santa leaves at least one present (i.e. number of houses visited by Santa)
 -- input will be in form of directions :  '^' - North, '>' - East, '<' - West and so on.
@@ -92,6 +104,17 @@ housesVisited xs = length . nub $ scanl (\(x, y) (a,b) -> (x+a, y+b)) (0,0) xs
 t3part1 :: Test
 t3part1 = "housesVisited" ~: TestList[housesVisited [(1,0)] ~?= 2,
 									housesVisited [(0,1), (1,0), (0,-1), (-1,0)] ~?= 5]
+
+-- part 2: now Santa and Robo Santa take turns in visiting houses i.e. alternating coordinating tuples belong to Santa and Robo Santa
+housesVisited2 :: [(Int,Int)] -> Int
+housesVisited2 zs = length . nub $ generatePath xs ++ generatePath ys
+	where
+		generatePath xs = scanl (\(x, y) (a,b) -> (x+a, y+b)) (0,0) xs
+		(xs, ys) = splitListInTwo zs
+t3part2 :: Test
+t3part2 = "housesVisited2" ~: TestList[housesVisited2 [(0,1), (0,-1)] ~?= 3,
+										housesVisited2 [(0,1), (1,0), (0,-1), (-1,0)] ~?= 3]
+
 
 puzzle3 :: IO ()
 puzzle3 = do
@@ -103,10 +126,116 @@ puzzle3 = do
 			| dir == '^' = (0,1)
 			| dir == 'v' = (0,-1)
 			| otherwise = (0,0)
-		print $ housesVisited $ foldr (\x acc -> (parseDirections x):acc) [] contents)
+		--print $ housesVisited $ foldr (\x acc -> (parseDirections x):acc) [] contents)
+		print $ housesVisited2 $ foldr (\x acc -> (parseDirections x):acc) [] contents)
+
+-- **** Day 4 ****
+--tday4 :: Test
+--tday4 = TestList[ t4part1 ]
+
+-- part 1 :  Find lowest positive number which produces md5 hash which in hex has 5 leading 0's.
+-- md5 hash to mine adventCoins is to be produced by combining secret key (input) and appending a decimal number to it
+--adventCoinMining :: String -> Int
+
+-- **** Day 6 ****
+
+type Point = (Int, Int)
+type Grid a = M.Map (Int, Int) a
+
+-- part 1 : Number of lights on. set lighting according to Santa's instructions and count how many lights are finally lit in 1000 x 1000 Grid
+
+-- generate 2D light grid i.e. Map (Int, Int) Bool based on number of lights in each dimension. All lights are initially off i.e. False
+
+lightGrid :: Point -> Grid Bool
+lightGrid (x, y) = M.fromList $ zip [(a,b)| a <- [0..x-1], b <- [0..y-1]] $ cycle [False]
+
+lightOn :: Point -> Grid Bool -> Grid Bool
+lightOn (x, y) grid = M.insert (x, y) True grid 
+
+lightOff :: Point -> Grid Bool -> Grid Bool
+lightOff (x, y) grid = M.insert (x, y) False grid
+
+lightFlip :: Point -> Grid Bool -> Grid Bool
+lightFlip p grid = case M.lookup p grid of
+	Just True -> M.insert p False grid
+	_ -> M.insert p True grid
+
+lightOp :: String -> (Point -> Grid Bool -> Grid Bool)
+lightOp f = case f of 
+	"on" -> lightOn
+	"off" -> lightOff
+	"toggle" -> lightFlip
+
+countLightsOn :: Grid Bool -> Int
+countLightsOn grid = M.size . M.filter (== True) $ grid
+
+-- for part 2, the lights have brightness levels instead of just On/Off (on -> +1, off -> -1 (to a min of zero) and toggle -> +2)
+
+brightGrid :: Point -> Grid Int
+brightGrid (x, y) = M.fromList $ zip [(a,b)| a <- [0..x-1], b <- [0..y-1]] $ cycle [0]
+
+brightOn :: Point -> Grid Int -> Grid Int
+brightOn p grid = case M.lookup p grid of
+	Nothing -> M.insert p 1 grid
+	Just x -> M.insert p (x+1) grid 
+
+brightOff :: Point -> Grid Int -> Grid Int
+brightOff p grid = case M.lookup p grid of
+	Nothing -> M.insert p 0 grid
+	Just x -> M.insert p (max 0 (x-1)) grid
+
+brightFlip :: Point -> Grid Int -> Grid Int
+brightFlip p grid = case M.lookup p grid of
+	Nothing -> M.insert p 2 grid
+	Just x -> M.insert p (x+2) grid
+
+brightOp :: String -> (Point -> Grid Int -> Grid Int)
+brightOp f = case f of 
+	"on" -> brightOn
+	"off" -> brightOff
+	"toggle" -> brightFlip
+
+brightness :: Grid Int -> Int
+brightness grid = (sum . M.elems) grid
+
+-- applies light operation function on a light grid on rectangular area given by two tuples
+gridOperation :: (Point -> Grid a -> Grid a) -> Grid a -> (Point, Point) -> Grid a
+gridOperation f grid (p1,p2) = foldr (\(x,y) acc -> f (x,y) acc) grid $ bounds p1 p2 where
+	bounds (a,b) (c,d) = [(x, y) | x <- (boundRange a c) , y <- (boundRange b d)]
+	boundRange x y = if x <= y then [x..y] else [y..x]
+
+parseGridOp :: String -> (String, (Point, Point))
+parseGridOp line = (fname, (p1, p2)) where
+	fname = opList !! 0
+	p1 = parseNum $ opList !! 1
+	p2 = parseNum $ opList !! 3
+	opList = (\xs -> if head xs == "turn" then tail xs else xs) . words $ line
+	parseNum numStr = tuplify2 $ map (\x -> read x :: Int) $ splitOn "," numStr
 
 
+lightsOn :: IO ()
+lightsOn = do
+	withFile "adventOfCodeDay6.txt" ReadMode (\handle -> do
+		contents <- hGetContents handle
+		-- part 1
+		--print $ countLightsOn $ foldl' (\grid (f,(p1, p2)) -> gridOperation (lightOp f) grid (p1, p2)) M.empty (map parseGridOp $ lines contents)
+		-- part 2
+		print $ brightness $ foldl' (\grid (f,(p1, p2)) -> gridOperation (brightOp f) grid (p1, p2)) M.empty (map parseGridOp $ lines contents)
+		)
 
 
+-- **** Day 20 ****
+tday20 :: Test
+tday20 = TestList [ t20part1 ]
+
+-- part 1 : Given number of gifts as input, find lowest house number which gets at least that many gifts
+lowestHouseWithGifts :: Int -> Int
+lowestHouseWithGifts x = fst . head . filter ((>= x).snd) $ zip [1..] $ map sumOfFactors [1..] where
+	sumOfFactors n = foldr (\(a,b) acc -> a+b+acc) 0 [(x, n `div` x)| x <- [1..limit n], n `mod` x == 0]
+	limit = floor . sqrt . fromIntegral
+
+t20part1 :: Test
+t20part1 = "lowestHouseWithGifts" ~: TestList[lowestHouseWithGifts 8 ~?= 6,
+											lowestHouseWithGifts 7 ~?= 4]
 
 
