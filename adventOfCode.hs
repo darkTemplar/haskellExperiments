@@ -8,6 +8,8 @@ import Data.List.Split
 import Crypto.Hash.MD5
 import qualified Data.ByteString.Lazy as LB
 import qualified Data.Map as M
+import qualified Data.Set as S
+import Text.Regex.PCRE
 
 doTests :: IO ()
 doTests = do
@@ -223,6 +225,60 @@ lightsOn = do
 		print $ brightness $ foldl' (\grid (f,(p1, p2)) -> gridOperation (brightOp f) grid (p1, p2)) M.empty (map parseGridOp $ lines contents)
 		)
 
+
+-- **** Day 7 ****
+-- circuit builder
+-- part 1 - complete circuit and logic gate operations and provide final signals at each gate
+
+
+-- **** Day 10 ****
+-- say out the number LOUD!! 
+-- e.g. 1211 is one 1, one 2 and 2 one's and hence it becomes 111221
+
+
+-- **** Day 14 ****
+-- Reindeer Olympics
+-- part 1 : each reindeer has a speed and rest time associated with it
+-- given input time, find which reindeer has travelled furthest
+
+distance :: Int -> [Int] -> Int
+distance totalTime xs = s * travelTime where
+	travelTime = t1 * (ceiling $ n/d)
+	s = xs !! 0
+	t1 = xs !! 1
+	t2 = xs !! 2
+	n = fromIntegral totalTime
+	d = fromIntegral $ t1+t2    
+
+parseReindeerStats :: String -> [Int]
+parseReindeerStats s = map (\x -> read x :: Int) $ getAllTextMatches m where
+	m = s =~ "[0-9]+" :: AllTextMatches [] String
+
+reindeerGames :: IO ()
+reindeerGames = do
+	withFile "adventOfCodeDay14.txt" ReadMode (\handle -> do
+		contents <- hGetContents handle
+		print $ maximum . map (distance 2503) . map parseReindeerStats . lines $ contents)
+
+
+
+-- **** Day 16 ****
+-- Aunt Sue
+-- part 1 - based on characteristics of 500 Aunt Sue's, figure out which one sent you the gift
+
+parseAunt :: String -> S.Set (String, Integer)
+parseAunt xs = S.fromList . map (\(x,y) -> (x, read y :: Integer)) . map tuplify2 . map cleanString .  splitOn "," $ (tail . dropWhile (/= ':')) $ xs where
+	cleanString = (map $ dropWhile (isSpace)) . (\x->splitOn ":" x)
+
+mfcsamAuntSue :: S.Set (String, Integer)
+mfcsamAuntSue = parseAunt "Sue 0: cars: 2, akitas: 0, goldfish: 5, children: 3, cats: 7, samoyeds: 2, pomeranians: 3, vizslas: 0, trees: 3, perfumes: 1"
+
+auntSue :: IO ()
+auntSue = do
+	withFile "adventOfCodeDay16.txt" ReadMode (\handle -> do
+		contents <- hGetContents handle
+		print $ length . takeWhile (\x -> not $ x `S.isSubsetOf` mfcsamAuntSue) . map parseAunt . lines $ contents
+		) 
 
 -- **** Day 20 ****
 tday20 :: Test
