@@ -30,7 +30,14 @@ tuplify2 (a:b:[]) = (a, b)
 -- split list by alternate elements i.e. [1,2,3,4] -> ([1,3], [2,4])
 splitListInTwo :: [a] -> ([a], [a])
 splitListInTwo [] = ([], [])
-splitListInTwo (x:y:zs) = ((x:xs), (y:ys)) where (xs, ys) = splitListInTwo zs  
+splitListInTwo (x:y:zs) = ((x:xs), (y:ys)) where (xs, ys) = splitListInTwo zs
+
+toDigits :: (Integral a) => a -> [a]
+toDigits 0 = []
+toDigits x = toDigits (x `div` 10) ++ [x `mod` 10]
+
+toNumber :: (Integral a) => [a] -> a
+toNumber xs = foldl' (\acc x -> x + (10 * acc)) 0 xs
 
 -- **** Day 1 ****
 tday1 :: Test
@@ -235,6 +242,21 @@ lightsOn = do
 -- say out the number LOUD!! 
 -- e.g. 1211 is one 1, one 2 and 2 one's and hence it becomes 111221
 
+-- without using group function 
+sayNumber :: [Int] -> [Int]
+sayNumber xs = concatMap (\(a,b) -> [a,b]) $ foldr appendNum [] xs where
+	appendNum n [] = [(1, n)]
+	appendNum n ((x,y):xs) = if n == y then ((x+1), y):xs else (1, n):(x, y):xs        
+
+-- using group function from Data.List package
+sayNumber1 :: [Int] -> [Int]
+sayNumber1 xs = concatMap (\ys -> [length ys, ys !! 0]) $ group xs
+
+lookAndSay :: IO ()
+lookAndSay = do
+	print $ length $ foldr (.) id (replicate 50 sayNumber1) $ toDigits 3113322113
+	print $ length $ foldr (.) id (replicate 50 sayNumber) $ toDigits 3113322113
+
 
 -- **** Day 14 ****
 -- Reindeer Olympics
@@ -306,5 +328,51 @@ lowestHouseWithGifts x = fst . head . filter ((>= x).snd) $ zip [1..] $ map sumO
 t20part1 :: Test
 t20part1 = "lowestHouseWithGifts" ~: TestList[lowestHouseWithGifts 8 ~?= 6,
 											lowestHouseWithGifts 7 ~?= 4]
+
+
+-- **** Day 23 ****
+-- Mini computer 
+-- part 1 - small computer with 2 registers and 6 instruction set. Figure out final output of the registers after given seq. of operations
+
+{-type Instruction = (Integer, String, Integer)
+
+execute :: 
+
+flookup = zip ["inc", "tpl", "hlf", "jmp", "jio", "jie"] [inc, tpl, hlf, jmp, jio, jie]
+
+inc x = x + 1
+tpl x = 3 * x
+hlf x = x `div` 2
+jie x = if x `mod` 2 == 0 then jmp else
+jio x = if x == 1 then jmp 
+
+
+parseInstruction :: String -> (String, Integer)
+parseInstruction xs = 
+
+miniComputer :: IO ()
+miniComputer = do
+	withFile "adventOfCodeDay23.txt" ReadMode (\handle -> do
+		contents <- hGetContents handle
+		print $ lines contents)
+-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
