@@ -266,18 +266,31 @@ reindeerGames = do
 -- Aunt Sue
 -- part 1 - based on characteristics of 500 Aunt Sue's, figure out which one sent you the gift
 
-parseAunt :: String -> S.Set (String, Integer)
-parseAunt xs = S.fromList . map (\(x,y) -> (x, read y :: Integer)) . map tuplify2 . map cleanString .  splitOn "," $ (tail . dropWhile (/= ':')) $ xs where
+parseAunt :: String -> [(String, Integer)]
+parseAunt xs = map (\(x,y) -> (x, read y :: Integer)) . map tuplify2 . map cleanString .  splitOn "," $ (tail . dropWhile (/= ':')) $ xs where
 	cleanString = (map $ dropWhile (isSpace)) . (\x->splitOn ":" x)
 
-mfcsamAuntSue :: S.Set (String, Integer)
-mfcsamAuntSue = parseAunt "Sue 0: cars: 2, akitas: 0, goldfish: 5, children: 3, cats: 7, samoyeds: 2, pomeranians: 3, vizslas: 0, trees: 3, perfumes: 1"
+mfcsamAuntSue :: [(String, Integer)]
+mfcsamAuntSue = parseAunt $ "Sue 0: cars: 2, akitas: 0, goldfish: 5, children: 3, cats: 7, samoyeds: 2, pomeranians: 3, vizslas: 0, trees: 3, perfumes: 1"
+
+-- part 2 - certain aunt properties are not exact values but ranges. cats and trees are GT values given while pomeranians and goldfish are LT
+
+-- custom subset function based on part 2 constraint i.e. some values are not exact but ranges. We use maps for more convenient subset matching based on ranges
+isCustomSubset :: M.Map String Integer -> M.Map String Integer -> Bool
+isCustomSubset s1 s2 = all (== True) $ foldr (\x acc -> if (M.lookup x s2) == Nothing then acc else (cmp x): acc) [] (M.keys s1) where
+	cmp x
+		| x == "cats" || x == "trees" = M.lookup x s1 > M.lookup x s2
+		| x == "pomeranians" || x == "goldfish" = M.lookup x s1 < M.lookup x s2
+		| otherwise = M.lookup x s1 == M.lookup x s2
 
 auntSue :: IO ()
 auntSue = do
 	withFile "adventOfCodeDay16.txt" ReadMode (\handle -> do
 		contents <- hGetContents handle
-		print $ length . takeWhile (\x -> not $ x `S.isSubsetOf` mfcsamAuntSue) . map parseAunt . lines $ contents
+		-- part 1 (Add 1 to get final answer)
+		print $ length . takeWhile (\x -> not $ x `S.isSubsetOf` (S.fromList mfcsamAuntSue)) . map (S.fromList . parseAunt) . lines $ contents
+		-- part 2
+		print $ length . takeWhile (\x -> not $ isCustomSubset x (M.fromList mfcsamAuntSue)) . map (M.fromList . parseAunt) . lines $ contents
 		) 
 
 -- **** Day 20 ****
